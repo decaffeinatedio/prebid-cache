@@ -381,7 +381,8 @@ docker build --build-arg VERSION=$(git describe --tags) --build-arg REVISION=$(g
 ```
 The default image is based on Ubuntu. An Alpine-based image can be built with `Dockerfile.alpine`:
 ```bash
-docker build -f Dockerfile.alpine -t prebid-cache ~/go/src/github.com/prebid/prebid-cache
+cd ~/go/src/github.com/prebid/prebid-cache
+docker build -f Dockerfile.alpine -t prebid-cache .
 ```
 We can run Prebid Cache using the newly created image:
 ```bash

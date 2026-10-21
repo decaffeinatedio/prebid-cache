@@ -1,9 +1,8 @@
-ARG GOVERSION=1.25.5
+ARG GOVERSION=1.25.10
 
 FROM golang:${GOVERSION}-bookworm AS build
 WORKDIR /app/prebid-cache/
-ENV GOPROXY="https://proxy.golang.org" \
-    CGO_ENABLED=0
+ENV CGO_ENABLED=0
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 COPY ./ ./
