@@ -12,17 +12,10 @@
 
 # Documentation
 *.md
-README.md
 LICENSE
 
 # CI/CD
 .github
-
-# Test files and sample data
-*_test.go
-test_utils.go
-sample-requests
-configtest
 
 # Build artifacts
 prebid-cache
@@ -31,7 +24,7 @@ prebid-cache
 *.so
 *.dylib
 
-# Go vendor directory (created in container)
+# Go vendor directory
 vendor/
 
 # Temporary files

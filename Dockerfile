@@ -1,38 +1,29 @@
-FROM alpine:3.23 AS build
+ARG GOVERSION=1.25.5
 
-RUN apk update && \
-    apk add --no-cache go=1.25.5-r0 git bash ca-certificates && \
-    rm -rf /var/cache/apk/*
-
+FROM golang:${GOVERSION}-bookworm AS build
+WORKDIR /app/prebid-cache/
 ENV GOPROXY="https://proxy.golang.org" \
     CGO_ENABLED=0
-
-WORKDIR /app/prebid-cache/
-
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
-
-COPY . .
-RUN go mod vendor
-
+COPY ./ ./
 ARG TEST="true"
 RUN if [ "$TEST" != "false" ]; then ./validate.sh ; fi
+ARG VERSION=""
+ARG REVISION=""
+RUN go build -trimpath -ldflags "\
+    -X github.com/prebid/prebid-cache/version.Ver=${VERSION} \
+    -X github.com/prebid/prebid-cache/version.Rev=${REVISION}" .
 
-RUN go build -mod=vendor -ldflags "-X github.com/prebid/prebid-cache/version.Ver=$(git describe --tags 2>/dev/null || echo 'dev') -X github.com/prebid/prebid-cache/version.Rev=$(git rev-parse HEAD 2>/dev/null || echo 'unknown')" .
-FROM alpine:3.23 AS release
+FROM ubuntu:22.04 AS release
 LABEL maintainer="hans.hjort@xandr.com"
-
-RUN apk add --no-cache ca-certificates && \
-    rm -rf /var/cache/apk/*
-
-RUN addgroup -g 2001 -S prebidgroup && \
-    adduser -u 1001 -S -G prebidgroup prebid
-
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN addgroup --system --gid 2001 prebidgroup && adduser --system --uid 1001 --ingroup prebidgroup prebid
 WORKDIR /usr/local/bin/
-
-COPY --from=build /app/prebid-cache/prebid-cache \
-                  /app/prebid-cache/config.yaml ./
-
+COPY --from=build --chmod=555 /app/prebid-cache/prebid-cache .
+COPY --from=build --chmod=444 /app/prebid-cache/config.yaml .
 USER prebid
 EXPOSE 2424 2525
 ENTRYPOINT ["/usr/local/bin/prebid-cache"]
